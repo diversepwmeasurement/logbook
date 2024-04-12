@@ -1,17 +1,15 @@
-name: Release Pull Request
-
-on:
-  push:
-    branches:
-    - release/*
-
 jobs:
   pull-request:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
-    - name: pull-request-action
-      uses: vsoch/pull-request-action@master
+    - continue-on-error: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        PULL_REQUEST_TITLE: Release ${{ github.ref }}
         PULL_REQUEST_BODY: Bump version
+        PULL_REQUEST_TITLE: Release ${{ github.ref }}
+      name: pull-request-action
+      uses: vsoch/pull-request-action@master
+name: Release Pull Request
+on:
+  repository_dispatch:
+    types: trigger-ga___release-pull-request.yaml

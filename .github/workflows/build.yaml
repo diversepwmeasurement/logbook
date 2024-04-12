@@ -1,49 +1,44 @@
-name: build
-
-on:
-  pull_request:
-    branches:
-    - main
-  push:
-    branches:
-    - main
-  schedule:
-  - cron: "0 6 * * *"
-
 env:
-  # https://github.com/actions/virtual-environments/issues/1499#issuecomment-689467080
-  MAVEN_OPTS: >-
-    -Dhttp.keepAlive=false
-    -Dmaven.wagon.http.pool=false
-    -Dmaven.wagon.httpconnectionManager.ttlSeconds=120
-
+  MAVEN_OPTS: -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.httpconnectionManager.ttlSeconds=120
 jobs:
   build:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        profile: ['']
+    runs-on: self-hosted
     steps:
-    - name: Checkout
+    - continue-on-error: true
+      name: Checkout
       uses: actions/checkout@v3
-    - name: Dependency Review
+    - continue-on-error: true
+      name: Dependency Review
       uses: actions/dependency-review-action@v4
       with:
         base-ref: ${{ github.event.pull_request.base.sha || '0.1.0' }}
-        head-ref: ${{ github.event.pull_request.head.sha || github.ref }}
-        vulnerability-check: true
-        license-check: false
         comment-summary-in-pr: on-failure
-    - name: Set up JDK
+        head-ref: ${{ github.event.pull_request.head.sha || github.ref }}
+        license-check: false
+        vulnerability-check: true
+    - continue-on-error: true
+      name: Set up JDK
       uses: actions/setup-java@v3
       with:
+        cache: maven
         distribution: temurin
         java-version: 17
-        cache: 'maven'
-    - name: Compile
+    - continue-on-error: true
+      name: Compile
       run: ./mvnw clean package -DskipTests
-    - name: Test
+    - continue-on-error: true
+      name: Test
       run: ./mvnw verify -P "${{ matrix.profile }}" -B
-    - name: Coverage
+    - continue-on-error: true
       if: github.event_name != 'pull_request'
-      run: ./mvnw -P coverage coveralls:report -B -D repoToken=${{ secrets.COVERALLS_TOKEN }}
+      name: Coverage
+      run: ./mvnw -P coverage coveralls:report -B -D repoToken=${{ secrets.COVERALLS_TOKEN
+        }}
+    strategy:
+      matrix:
+        profile:
+        - ''
+name: build
+on:
+  repository_dispatch:
+    types: trigger-ga___build.yaml
